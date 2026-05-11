@@ -1,14 +1,14 @@
+import 'dotenv/config';
 import express from 'express';
 import connectDB from './database/db.js';
-import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 
 import homeRoute from './routes/homeRoute.js';
 import authRoutes from './routes/authRoutes.js';
 import sellerRoutes from './routes/sellerRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 
-const myEnv = dotenv.config();
-dotenvExpand.expand(myEnv);
+dotenvExpand.expand({ parsed: process.env });
 
 const app = express();
 
@@ -16,6 +16,7 @@ app.use(express.json());
 app.use('/api/home', homeRoute);
 app.use('/api/auth', authRoutes);
 app.use('/api/seller',sellerRoutes);
+app.use('/api/product', productRoutes);
 
 connectDB();
 
