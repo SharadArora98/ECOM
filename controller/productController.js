@@ -13,7 +13,7 @@ export const createProduct = async (req, res) => {
             description,
             base_price,
             category,
-            // video,
+            video,
             images: []
         });
         await newProduct.save();

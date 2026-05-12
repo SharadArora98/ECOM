@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import connectDB from './database/db.js';
 import dotenvExpand from 'dotenv-expand';
 
@@ -12,6 +13,7 @@ dotenvExpand.expand({ parsed: process.env });
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use('/api/home', homeRoute);
 app.use('/api/auth', authRoutes);

@@ -46,7 +46,17 @@ const login = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
-        res.status(200).json({ success: true, message: "User logged in successfully", token });
+        res.status(200).json({ 
+            success: true, 
+            message: "User logged in successfully", 
+            token,
+            user: {
+                id: existingUser._id,
+                name: existingUser.username,
+                email: existingUser.email,
+                role: existingUser.role
+            }
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error" });
     }
