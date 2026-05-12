@@ -34,8 +34,16 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find();
-        res.json({ message: 'List of products', products });
+        //pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const sortBy = req.query.sortBy || 'createdAt';
+        const sortOrder = req.query.sort === 'asc' ? 1 : -1;
+        
+        const products = await Product.find().skip(skip).limit(limit).sort({ [sortBy]: sortOrder });
+        res.json({ message: 'List of products', products, page, limit });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching products', error });
     }
