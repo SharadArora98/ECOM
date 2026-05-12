@@ -1,22 +1,5 @@
 import Product from "../model/product.js";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
-
-const uploadImagesInBackground = async (productId, files) => {
-    try {
-        const uploadPromises = files.map(file => uploadToCloudinary(file.buffer));
-        const results = await Promise.all(uploadPromises);
-
-        const images = results.map(result => ({
-            url: result.secure_url,
-            publicId: result.public_id
-        }));
-
-        await Product.findByIdAndUpdate(productId, { $set: { images: images } });
-        console.log(`Images updated for product ${productId}`);
-    } catch (error) {
-        console.error(`Error uploading images for product ${productId}:`, error);
-    }
-};
+import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
 
 export const createProduct = async (req, res) => {
     try {
@@ -93,8 +76,38 @@ export const deleteProduct = async (req, res) => {
         if (!deletedProduct) {
             return res.status(404).json({ message: 'Product not found' });
         }
+        const imagesToDelete = deletedProduct.images.map(img => img.publicId);
+        if(imagesToDelete.length > 0) {
+            await deleteImagesFromCloudinary(imagesToDelete);
+        }
         res.json({ message: 'Product deleted', product: deletedProduct });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting product', error });
+    }
+};
+
+const uploadImagesInBackground = async (productId, files) => {
+    try {
+        const uploadPromises = files.map(file => uploadToCloudinary(file.buffer));
+        const results = await Promise.all(uploadPromises);
+
+        const images = results.map(result => ({
+            url: result.secure_url,
+            publicId: result.public_id
+        }));
+
+        await Product.findByIdAndUpdate(productId, { $set: { images: images } });
+        console.log(`Images updated for product ${productId}`);
+    } catch (error) {
+        console.error(`Error uploading images for product ${productId}:`, error);
+    }
+};
+
+const deleteImagesFromCloudinary = async (publicIds) => {
+    try {
+        const deletePromises = publicIds.map(id => deleteFromCloudinary(id));
+        await Promise.all(deletePromises);
+    } catch (error) {
+        console.error(`Error deleting images from Cloudinary:`, error);
     }
 };
