@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../api/axiosConfig';
 
 interface Product {
@@ -13,6 +14,7 @@ interface Product {
 const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,7 +58,7 @@ const ProductList: React.FC = () => {
       ) : (
         <div className="product-grid">
           {products.map((product) => (
-            <div key={product._id} className="product-card">
+            <div key={product._id} className="product-card" onClick={() => navigate(`/product/${product._id}`)} style={{ cursor: 'pointer' }}>
               <div className="product-img-wrapper">
                 <img 
                   src={product.images[0]?.url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80'} 
