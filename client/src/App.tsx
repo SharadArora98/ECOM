@@ -7,6 +7,8 @@ import Register from './pages/Register';
 import ProductList from './pages/ProductList';
 import AddProduct from './pages/AddProduct';
 import ViewProduct from './pages/ViewProduct';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 import './styles/global.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = ({ children, role }) => {
@@ -28,6 +30,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/product/:id" element={<ViewProduct />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancel" element={<PaymentCancel />} />
         <Route 
           path="/add-product" 
           element={

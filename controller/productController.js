@@ -126,6 +126,16 @@ export const getProductById = async (req, res) => {
     }
 };
 
+export const getSellerListingsByProductId = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const listings = await ProductSeller.find({ product: id }).populate('seller', 'name email');
+        res.json({ success: true, listings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching seller listings', error: error.message });
+    }
+};
+
 export const updateProduct = async (req, res) => {
     try {
         const { name, description, base_price, category, images, video } = req.body;
