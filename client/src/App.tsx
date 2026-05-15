@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import ProductList from './pages/ProductList';
 import AddProduct from './pages/AddProduct';
 import ViewProduct from './pages/ViewProduct';
+import SellerDashboard from './pages/SellerDashboard';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
 import './styles/global.css';
@@ -37,6 +38,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute role="seller">
               <AddProduct />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/seller-dashboard" 
+          element={
+            <ProtectedRoute role="seller">
+              <SellerDashboard />
             </ProtectedRoute>
           } 
         />

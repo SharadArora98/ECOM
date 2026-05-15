@@ -23,12 +23,20 @@ const Navbar: React.FC = () => {
           {user ? (
             <>
               {user.role === 'seller' && (
-                <Link 
-                  to="/add-product" 
-                  className={`nav-link ${isActive('/add-product') ? 'active' : ''}`}
-                >
-                  Sell Product
-                </Link>
+                <>
+                  <Link 
+                    to="/seller-dashboard" 
+                    className={`nav-link ${isActive('/seller-dashboard') ? 'active' : ''}`}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    to="/add-product" 
+                    className={`nav-link ${isActive('/add-product') ? 'active' : ''}`}
+                  >
+                    Sell Product
+                  </Link>
+                </>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '0.5rem' }}>
                 <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>
