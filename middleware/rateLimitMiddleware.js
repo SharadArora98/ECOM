@@ -1,12 +1,6 @@
 import { rateLimit } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
-import Redis from "ioredis";
-
-const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-
-redisClient.on("error", (err) => {
-  console.error("Redis Connection Error:", err);
-});
+import { redisClient } from "../utils/redis.js";
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

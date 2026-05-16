@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import Product from '../model/product.js';
 import ProductSeller from '../model/productSeller.js';
 import Order from '../model/order.js';
+import User from '../model/user.js';
+import { emailQueue } from '../queues/emailQueue.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -76,7 +78,7 @@ export const handleWebhook = async (req, res) => {
         mongooseSession.startTransaction();
 
         try {
-            // 1. Idempotency Check: Has this session already been processed?
+            // 1. Idempotency Check
             const existingOrder = await Order.findOne({ stripeSessionId: session.id }).session(mongooseSession);
             if (existingOrder) {
                 console.log(`Order for session ${session.id} already exists. Skipping.`);
@@ -87,9 +89,12 @@ export const handleWebhook = async (req, res) => {
             const items = JSON.parse(session.metadata.items);
             const userId = session.metadata.userId;
 
+            // Fetch user for email
+            const user = await User.findById(userId).session(mongooseSession);
+            if (!user) throw new Error("User not found during webhook processing");
+
             for (const item of items) {
-                // 2. Atomic Stock Update with Concurrency Control
-                // We only decrement IF stock is greater than or equal to quantity
+                // 2. Atomic Stock Update
                 const updateResult = await ProductSeller.findOneAndUpdate(
                     { _id: item.listingId, stock: { $gte: item.quantity } },
                     { $inc: { stock: -item.quantity } },
@@ -98,17 +103,17 @@ export const handleWebhook = async (req, res) => {
 
                 let orderStatus = 'paid';
                 if (!updateResult) {
-                    // Race Condition Case: Stock was taken between Checkout and Webhook
-                    console.error(`CRITICAL: Stock exhausted for listing ${item.listingId} during payment processing.`);
+                    console.error(`CRITICAL: Stock exhausted for listing ${item.listingId}`);
                     orderStatus = 'refund_required';
                 }
 
+                const listing = await ProductSeller.findById(item.listingId).populate('product').session(mongooseSession);
+                
                 // 3. Create Order Record
-                const listing = await ProductSeller.findById(item.listingId).session(mongooseSession);
-                await Order.create([{
+                const [order] = await Order.create([{
                     user: userId,
                     listing: item.listingId,
-                    product: listing.product,
+                    product: listing.product._id,
                     seller: listing.seller,
                     quantity: item.quantity,
                     totalAmount: session.amount_total / 100,
@@ -116,17 +121,30 @@ export const handleWebhook = async (req, res) => {
                     status: orderStatus,
                     paymentStatus: 'paid'
                 }], { session: mongooseSession });
+
+                // 4. Enqueue Email Job (Async)
+                if (orderStatus === 'paid') {
+                    await emailQueue.add(`order-confirmation-${order._id}`, {
+                        email: user.email,
+                        orderDetails: {
+                            orderId: order._id,
+                            productName: listing.product.name,
+                            totalAmount: order.totalAmount,
+                        }
+                    }, {
+                        attempts: 3,
+                        backoff: { type: 'exponential', delay: 1000 }
+                    });
+                }
             }
 
-            // Commit all changes atomically
             await mongooseSession.commitTransaction();
             console.log(`Payment and Order processed successfully for Session: ${session.id}`);
 
         } catch (error) {
-            // If anything fails, undo everything (Rollback)
             await mongooseSession.abortTransaction();
-            console.error('Transaction Aborted. Error processing webhook:', error);
-            return res.status(500).json({ message: 'Internal Server Error during order processing' });
+            console.error('Transaction Aborted:', error);
+            return res.status(500).json({ message: 'Internal Server Error' });
         } finally {
             mongooseSession.endSession();
         }
